@@ -1,0 +1,181 @@
+# HAP - Configuration Validation Workflow
+# Validates Home Assistant configuration on pull requests and pushes
+# Prevents broken configs from being deployed to the Raspberry Pi
+
+name: Validate Configuration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/config/**'
+      - '.github/workflows/validate.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/config/**'
+      - '.github/workflows/validate.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  validate-yaml:
+    name: Validate YAML Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Validate YAML syntax
+        run: |
+          echo "Validating YAML files..."
+          python -c "
+          import yaml
+          import sys
+          from pathlib import Path
+
+          errors = []
+          config_dir = Path('src/config')
+
+          for yaml_file in config_dir.glob('**/*.yaml'):
+              # Skip example/template files
+              if 'example' in yaml_file.name or 'template' in yaml_file.name:
+                  continue
+
+              try:
+                  with open(yaml_file) as f:
+                      yaml.safe_load(f)
+                  print(f'OK: {yaml_file}')
+              except yaml.YAMLError as e:
+                  errors.append((yaml_file, str(e)))
+                  print(f'ERROR: {yaml_file}')
+                  print(f'  {e}')
+
+          if errors:
+              print(f'\nValidation failed with {len(errors)} error(s)')
+              sys.exit(1)
+          else:
+              print(f'\nAll YAML files validated successfully')
+          "
+
+  validate-homeassistant:
+    name: Validate Home Assistant Config
+    runs-on: ubuntu-latest
+    needs: validate-yaml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create secrets stub
+        run: |
+          # Create a minimal secrets.yaml for validation
+          # Real secrets are never committed
+          cat > src/config/secrets.yaml << 'EOF'
+          # Stub secrets for CI validation
+          # Replace with real values on Raspberry Pi
+
+          # ENTSO-E
+          entsoe_api_key: "stub-api-key"
+
+          # Tesla
+          tesla_client_id: "stub-client-id"
+          tesla_client_secret: "stub-client-secret"
+
+          # Home Assistant
+          ha_latitude: 50.8503
+          ha_longitude: 4.3517
+          ha_elevation: 13
+
+          # EEVEE (if applicable)
+          eevee_username: "stub-user"
+          eevee_password: "stub-pass"
+
+          # Email (for receipt parsing)
+          email_server: "imap.example.com"
+          email_username: "stub-user"
+          email_password: "stub-pass"
+          EOF
+
+      - name: Validate with Home Assistant
+        uses: frenck/action-home-assistant@v1.4
+        with:
+          path: "./src/config"
+          secrets: "./src/config/secrets.yaml"
+          version: stable
+
+  check-secrets-references:
+    name: Check Secret References
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Checking for potential hardcoded secrets..."
+
+          # Look for patterns that might be secrets (API keys, passwords, etc.)
+          # This is a basic check - not exhaustive
+
+          PATTERNS=(
+            "api_key:\s*['\"]?[a-zA-Z0-9_-]{20,}['\"]?"
+            "password:\s*['\"]?[^\!].+['\"]?"
+            "secret:\s*['\"]?[a-zA-Z0-9_-]{20,}['\"]?"
+          )
+
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -rn --include="*.yaml" -E "$pattern" src/config/ 2>/dev/null | grep -v "secrets.yaml.example" | grep -v "!secret"; then
+              echo "WARNING: Potential hardcoded secret found matching pattern: $pattern"
+              FOUND=1
+            fi
+          done
+
+          if [ $FOUND -eq 1 ]; then
+            echo ""
+            echo "Please use !secret references instead of hardcoded values"
+            echo "Example: api_key: !secret my_api_key"
+            # Warning only, don't fail the build
+          fi
+
+          echo "Secret reference check complete"
+
+      - name: Verify secret references exist
+        run: |
+          echo "Verifying all !secret references have corresponding entries..."
+
+          # Extract all !secret references from config files
+          SECRETS_USED=$(grep -rh "!secret " src/config/*.yaml 2>/dev/null | \
+            sed 's/.*!secret //' | \
+            sed 's/[^a-zA-Z0-9_].*$//' | \
+            sort -u)
+
+          # Check if secrets.yaml.example exists and has these entries
+          if [ -f "src/config/secrets.yaml.example" ]; then
+            MISSING=0
+            for secret in $SECRETS_USED; do
+              if ! grep -q "^${secret}:" src/config/secrets.yaml.example; then
+                echo "WARNING: Secret '$secret' used but not in secrets.yaml.example"
+                MISSING=1
+              fi
+            done
+
+            if [ $MISSING -eq 1 ]; then
+              echo ""
+              echo "Please add missing secrets to secrets.yaml.example (with placeholder values)"
+            fi
+          else
+            echo "WARNING: secrets.yaml.example not found"
+          fi
+
+          echo "Secret references verification complete"

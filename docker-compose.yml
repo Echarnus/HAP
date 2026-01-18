@@ -1,0 +1,64 @@
+# HAP - Local Development Environment
+# Run Home Assistant locally to test configurations before deploying to Pi
+#
+# Usage:
+#   docker compose up -d          # Start Home Assistant
+#   docker compose logs -f        # View logs
+#   docker compose down           # Stop
+#
+# Access: http://localhost:8123
+
+services:
+  homeassistant:
+    container_name: hap-dev-homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ./src/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8123:8123"
+    environment:
+      - TZ=Europe/Brussels
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Zigbee2MQTT - Only for configuration validation (no hardware in dev)
+  # Start with: docker compose --profile zigbee up
+  zigbee2mqtt:
+    container_name: hap-dev-zigbee2mqtt
+    image: koenkk/zigbee2mqtt:latest
+    volumes:
+      - ./src/config/zigbee2mqtt:/app/data
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Europe/Brussels
+    profiles:
+      - zigbee
+    # Will fail without hardware - use only for config syntax validation
+    restart: "no"
+
+  # MQTT Broker - Required if testing MQTT integrations
+  # Start with: docker compose --profile mqtt up
+  mosquitto:
+    container_name: hap-dev-mosquitto
+    image: eclipse-mosquitto:latest
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    profiles:
+      - mqtt
+      - zigbee
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:
+  mosquitto-logs:

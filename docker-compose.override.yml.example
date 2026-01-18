@@ -1,0 +1,40 @@
+# HAP - Docker Compose Override Example
+# Copy this file to docker-compose.override.yml for local customizations
+# docker-compose.override.yml is gitignored
+#
+# Usage:
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   # Edit as needed
+#   docker compose up -d
+
+services:
+  homeassistant:
+    # Override port if 8123 conflicts with something else
+    # ports:
+    #   - "8124:8123"
+
+    # Add additional volume mounts for testing
+    # volumes:
+    #   - ./src/config:/config
+    #   - ./test-data:/test-data:ro
+
+    # Override environment variables
+    # environment:
+    #   - TZ=Europe/Brussels
+    #   - DEBUG=true
+
+    # Use a specific Home Assistant version for testing
+    # image: ghcr.io/home-assistant/home-assistant:2024.1.0
+
+  # Example: Add additional services for integration testing
+  # influxdb:
+  #   container_name: hap-dev-influxdb
+  #   image: influxdb:2.7
+  #   ports:
+  #     - "8086:8086"
+  #   environment:
+  #     - DOCKER_INFLUXDB_INIT_MODE=setup
+  #     - DOCKER_INFLUXDB_INIT_USERNAME=admin
+  #     - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+  #     - DOCKER_INFLUXDB_INIT_ORG=hap
+  #     - DOCKER_INFLUXDB_INIT_BUCKET=homeassistant

@@ -1,0 +1,85 @@
+# HAP - HACS Integration Manifest
+# This file documents installed HACS integrations for recovery purposes
+# HACS integrations must be manually installed via the HACS UI
+#
+# After recovery:
+# 1. Install HACS: https://hacs.xyz/docs/setup/download
+# 2. Install each integration listed below via HACS UI
+# 3. Configure integrations via Settings > Devices & Services
+
+# =============================================================================
+# Custom Integrations (Backend)
+# =============================================================================
+integrations:
+  - name: "ENTSO-E Tariff"
+    repository: "JaccoR/hass-entso-e"
+    version: "latest"
+    purpose: "Belgian electricity spot prices from ENTSO-E Transparency Platform"
+    configuration: "Via UI - requires API key in secrets.yaml"
+
+  - name: "Fluvius"
+    repository: "myTselworern/Fluvius"
+    version: "latest"
+    purpose: "Fluvius smart meter data (alternative to P1 hardware)"
+    configuration: "Via UI - requires Mijn Fluvius credentials"
+    optional: true
+    notes: "Only needed if not using P1 port reader"
+
+# =============================================================================
+# Lovelace Frontend (Cards & Themes)
+# =============================================================================
+frontend:
+  - name: "ApexCharts Card"
+    repository: "RomRider/apexcharts-card"
+    version: "latest"
+    purpose: "Advanced charting for electricity prices and energy graphs"
+
+  - name: "Button Card"
+    repository: "custom-cards/button-card"
+    version: "latest"
+    purpose: "Customizable button styling for dashboard"
+
+  - name: "Mini Graph Card"
+    repository: "kalkih/mini-graph-card"
+    version: "latest"
+    purpose: "Compact graphs for sensor data"
+
+  - name: "Mushroom Cards"
+    repository: "piitaya/lovelace-mushroom"
+    version: "latest"
+    purpose: "Modern, clean card designs"
+    optional: true
+
+  - name: "Power Flow Card"
+    repository: "ulic75/power-flow-card"
+    version: "latest"
+    purpose: "Visualize energy flow (grid, solar, battery, home)"
+    notes: "Used for Fluvius energy dashboard"
+
+# =============================================================================
+# Themes
+# =============================================================================
+themes:
+  # Add any HACS themes here
+  # - name: "Theme Name"
+  #   repository: "user/repo"
+
+# =============================================================================
+# Recovery Notes
+# =============================================================================
+# After fresh Home Assistant installation:
+#
+# 1. Install HACS:
+#    - Go to Settings > Devices & Services > Add Integration
+#    - Search for HACS and follow setup instructions
+#    - Or use terminal: wget -O - https://get.hacs.xyz | bash -
+#
+# 2. Install each integration:
+#    - Open HACS in sidebar
+#    - Search for integration name
+#    - Click Download
+#    - Restart Home Assistant
+#
+# 3. Configure integrations:
+#    - Go to Settings > Devices & Services
+#    - Add integration and enter credentials from secrets.yaml

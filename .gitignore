@@ -1,0 +1,53 @@
+# Secrets - NEVER commit these
+secrets.yaml
+secrets.yaml.local
+*.secret
+
+# Home Assistant runtime
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+.storage/
+.cloud/
+tts/
+deps/
+*.log
+
+# Zigbee2MQTT runtime (keep config, ignore state)
+src/config/zigbee2mqtt/log/
+src/config/zigbee2mqtt/state.json
+src/config/zigbee2mqtt/database.db
+coordinator_backup.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.ambr
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

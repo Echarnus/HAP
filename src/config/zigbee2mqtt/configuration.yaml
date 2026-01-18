@@ -1,0 +1,73 @@
+# HAP - Zigbee2MQTT Configuration
+# This file is synced to the Zigbee2MQTT add-on on Raspberry Pi
+#
+# Note: Device pairings are stored in the Zigbee coordinator,
+# not in this file. Backup coordinator separately for recovery.
+
+# Home Assistant integration
+homeassistant: true
+
+# MQTT broker connection
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://core-mosquitto:1883
+  # If using authentication:
+  # user: !secret mqtt_username
+  # password: !secret mqtt_password
+
+# Zigbee coordinator settings
+serial:
+  # Adjust port based on your coordinator hardware
+  # Common values:
+  # - /dev/ttyUSB0 (USB coordinator)
+  # - /dev/ttyACM0 (some USB coordinators)
+  # - /dev/ttyAMA0 (GPIO-connected)
+  port: /dev/ttyUSB0
+
+# Web frontend
+frontend:
+  port: 8080
+
+# Advanced settings
+advanced:
+  # Network key - generate a unique one for security
+  # Use: openssl rand -hex 16
+  # network_key: GENERATE_YOUR_OWN_KEY
+
+  # Log level: debug, info, warn, error
+  log_level: info
+
+  # Home Assistant discovery
+  homeassistant_discovery_topic: homeassistant
+  homeassistant_status_topic: homeassistant/status
+
+  # Device availability
+  availability_timeout: 0
+  availability_blocklist: []
+  availability_passlist: []
+
+  # Last seen
+  last_seen: ISO_8601
+
+# Device-specific configurations
+# Devices are auto-added after pairing
+# Customize friendly names and settings here
+devices:
+  # Example (uncomment and modify after pairing):
+  # '0x00158d0001234567':
+  #   friendly_name: living_room_shutter
+  #   description: "Living room roller shutter"
+
+# Groups for controlling multiple devices together
+groups:
+  # Example (uncomment to create shutter group):
+  # '1':
+  #   friendly_name: all_shutters
+  #   devices:
+  #     - living_room_shutter
+  #     - bedroom_shutter
+
+# OTA updates for devices
+ota:
+  update_check_interval: 1440  # Check every 24 hours
+  disable_automatic_update_check: false
